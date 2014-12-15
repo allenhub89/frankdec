@@ -1,0 +1,276 @@
+<!--
+######################################
+# fRNAkenstein                       #
+#   by Allen Hubbard & Wayne Treible #
+#                                    #
+# Version 0.10 Updated 6/17/2014     #
+######################################
+-->
+
+<?php 
+
+session_start();
+
+$subdirectories = "/var/www/subdirectories_for_interface";
+
+if(empty($_SESSION['user_name']) && !($_SESSION['user_is_logged_in']))
+{
+  header('Location: index.php');
+}
+
+?>
+
+
+<head>
+<title>
+MInotauR - MImapR
+</title>
+<link rel="STYLESHEET" type="text/css" href="css_dir/style.css">
+<link rel="icon" type="image/ico" href="images/favicon.ico"/>
+
+<!--
+######################
+# Checkbox Validator #
+######################
+-->
+
+<script language="javascript">
+function valthisform()
+{
+	var libraries=document.getElementsByName("libraries[]");
+	var okay=false;
+	for(var i=0,l=controlcheckboxs.length;i<l;i++)
+	{
+		if(libraries[i].checked)
+		{
+	   		okay=true;
+		}
+	}
+	if(okay){
+		/*document.getElementById('crunch').disabled = 1*/
+		alert("Running MImapR on Data!");
+	}
+	else alert("Please select a library!");
+	return okay;
+}
+</script>
+
+</head>
+<center>
+
+<!--
+############################
+# Beginning of submit form #
+############################
+-->
+
+<style type="text/css">
+    .fieldset-auto-width {
+         display: inline-block;
+    }
+</style>
+<div>
+<fieldset class="fieldset-auto-width">
+
+<legend>
+<h3>
+MInotauR - MImapR
+</h3>
+</legend>
+<form class="go-bottom" id='submitform' onsubmit="return valthisform(this);" action='/diffexpress_response.php' method='post' target='formresponse'>
+
+
+
+<!--
+################################
+# Beginning of alignment table #
+################################
+-->
+
+<table style="margin: 0px;">
+
+<!--
+##########################################################
+# Create Checkboxes for control library files (lib nums) #
+##########################################################
+-->
+
+
+<tr style="padding:0px; margin:0px;">
+<td valign="top" align="left" style="padding-top:12px;padding-left:8px;width:300px">
+
+<div class='container'>
+
+<?php
+$libraries = scandir("$subdirectories/minotaur/fastq_directory");
+
+# Sorts files by "natural human sorting" such that:
+# 1.ext                       1.ext
+# 10.ext     ==becomes==>     2.ext
+# 2.ext                       10.ext 
+if(!empty($libraries))
+{
+  natsort($libraries);
+}
+
+echo "<h4>Choose library number(s):</h4>";
+if(count($libraries)<3){ #because of . and .. directories existing
+	echo "<b>Note:</b> No libraries ready to crunch!<br>";
+} else {
+  foreach($libraries as $library)
+  {
+    if ($library !== "." and $library !== "..")
+    {  
+      $librarynum = "";
+      $libpattern = "/\D*(.*)/";
+      preg_match($libpattern, $library, $matches);
+      $librarynum = $matches[1];
+      echo "<input type=\"checkbox\" name=\"controlfilename[]\" class=\"blockedctrl\" value=\"$library\">$librarynum<br>";
+    }
+  } 
+  echo "</select>";
+}  
+
+
+?>
+
+<br>
+
+<div class='container'>
+<!--
+######################################
+# Proc Selector Slider (JS onchange) #
+######################################
+-->
+
+<h4>Number of processors:</h4>
+<script>
+function showVal(newVal){ 
+    document.getElementById("slideVal").innerHTML = newVal;
+}
+</script> 
+
+<div style="float:left;">Run on&nbsp;</div>
+<div id="slideVal" style="float:left;">16</div>
+<div style="float:left;">&nbsp;processor(s)</div><br>
+
+<div style="height:30px;width:250px;float:left;">
+1<input name="procs" type="range" min="1" max="31" step="1" value="16" oninput="showVal(this.value)"> 31</div>
+<br>
+
+<!--
+################################
+# Create DDBox for fasta files #
+################################
+-->
+
+<?php
+$fafiles = scandir("$subdirectories/fasta_directory"); 
+
+echo "<h4>Choose a fasta:</h4>";
+if(count($fafiles)<3){ #because of . and .. directories existing
+	echo "<b>Note:</b> No fasta files available! (email wtreible@udel.edu)<br>";
+} else {
+	echo "<select name=\"fafilename\">";
+	foreach ($fafiles as $fafile)
+	{
+	  if (($fafile != ".") and ($fafile != ".."))
+	  { 
+	    echo "<option value=\"$fafile\">$fafile</option>";
+	  }
+	} 
+	echo "</select>";
+}
+
+?>
+
+<!--
+#####################################
+# Create DDBox for annotation files #
+#####################################
+-->
+
+<?php
+
+$afiles = scandir("$subdirectories/annotation_directory");
+
+echo "<h4>Choose an annotation file:</h4>";
+if(count($afiles)<3){ #because of . and .. directories existing
+	echo "<b>Note:</b> No annotation files available! (email wtreible@udel.edu)<br>";
+} else {
+	echo "<select name=\"afilename\">";
+	foreach ($afiles as $afile) 
+	{
+	  if(($afile != ".") and ($afile != ".."))
+	  { 
+	    echo "<option value=\"$afile\">$afile</option>";
+	  }
+	} 
+	echo "</select>";
+}
+?>
+
+<!--
+#################
+# Analysis Name #
+#################
+-->
+
+<h4>Analysis Name:</h4> <input type="text" id="analysisname" name="analysisname"> 
+<br>
+
+<!--
+#################
+# Captcha Stuff #
+#################
+-->
+
+<!--<?php
+require_once('recaptchalib.php');
+$publickey = "6LfK0PUSAAAAANftfso7uj8OdyarzxH0zvst0Tmf"; 
+#echo "Finally... Prove you're not a robot!";
+#echo recaptcha_get_html($publickey);
+?>-->
+
+<br>
+
+<input type='hidden' name='submitted' id='submitted' value='1'/>
+<!--
+##############
+# Dialog Box #
+##############
+-->
+<div id="dialog" style="display:none;" title="">
+  <p></p>
+</div>
+
+<!--
+###########################
+# Submit and Menu Buttons #
+###########################
+-->
+
+<button class="crunch" type="submit">fRNAkenstein, Crunch!</button>
+<br> <br> <br>
+
+</form>
+<form action="menu.php">
+    <input align="bottom" type="submit" value="Return to Menu">
+</form>
+</td>
+</div>
+</td>
+
+
+<!--
+#######################
+# Footer and clean-up #
+#######################
+-->
+
+</tr>
+</table>
+</link></form>
+<p align="right"><font size="1">- Created by Allen Hubbard and Wayne Treible at the University of Delaware - </font></p>
+</fieldset>
+</body>
